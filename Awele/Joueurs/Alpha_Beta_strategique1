@@ -1,0 +1,158 @@
+import sys
+sys.path.append("../..")
+import game
+PRONF=5
+max_val=-50
+min_val=50
+cpt = 0
+ev=[-1.9799999999999998, 0.894, 1.999, 3.059000000000001, 2.9800000000000004, 4.808, 5.880000000000001, 8.189, 7.889, 5.011, 9.997000000000002, 11.968000000000002, 11.881, 13.481000000000002, 12.679000000000002, 15.099]
+
+
+
+def evaluation(jeu,coup,joueur):
+    return ev[0]*Score(jeu,joueur)+ev[1]*CaseConsecutif(jeu,coup,joueur)+ev[2]*Piege(jeu,joueur)+ev[3]*Krou(jeu,joueur)
+    
+def Score(jeu,joueur):
+    L=game.getScores(jeu)
+    
+    if joueur==1:
+        return L[0]-L[1]
+    else:
+        return L[1]-L[0]
+    
+def CaseConsecutif(jeu,coup,joueur):
+    cj = game.getCoupsJoues(jeu)
+    i=-6
+
+    while i<0:
+        if len(cj)<15 and (len(cj)+i)<0 : #si in est plus en debut et si il n'y a plus de coup precedent
+            return 0
+        elif abs(cj[i][1]-coup[1])==1: #si c'est un voisin des deux dernier
+            return 0
+        i=i+2
+    return 1
+    
+
+
+
+def Piege(jeu,joueur):
+    L=game.getScores(jeu)
+    eval=0
+    j1=0
+    j2=0
+
+   
+    if(L[0]+L[1]>48-15):
+        for i in range(0,6):
+            j1=game.getCaseVal(jeu,0,i)
+            j2=game.getCaseVal(jeu,1,i)
+         
+        if(joueur==1):
+            """
+            if game.getCaseVal(jeu,1,1)<=1 and game.getCaseVal(jeu,1,0)==1:
+                    eval=eval+2
+            """
+            eval=eval+j1-j2
+            
+        else:
+            """
+            if game.getCaseVal(jeu,0,4)<=1 and game.getCaseVal(jeu,0,5)==1:
+                    eval=eval+2
+            """
+            eval=eval+j2-j1
+    return eval
+
+   
+def Krou(jeu,joueur):
+    eval=0
+    for i in range(0,6):
+        if game.getCaseVal(jeu,joueur-1,i)>=12:
+            eval=eval+1
+    return eval
+        
+         
+    return case
+    
+
+
+def decision(jeu): 
+    joueur = game.getJoueur(jeu)
+    L= game.getCoupsValides(jeu)
+    J=[]
+    alpha=-5000000
+    beta=5000000
+    challenger=0
+    
+    i=0
+    if(joueur==1):
+        i=len(L)-1
+    ok=0
+    while(ok==0):
+        l=estimation(game.getCopieJeu(jeu),L[i],1,joueur,alpha,beta)
+        if(l>alpha):
+            alpha=l
+            challenger=i
+        if(joueur==1):
+            i-=1
+            if(i<0):
+                ok=1
+        else:
+            i+=1
+            if(i>=len(L)):
+                ok=1
+        #J.append(l)
+        #jeu2=game.getCopieJeu(jeu)
+
+
+
+    #while i< len (J):
+    #    if(J[challenger]<J[i]):
+    #        challenger=i
+    #    i=i+1
+        
+    return L[challenger]
+
+
+def estimation(jeu,coup,prf,joueur,alpha,beta):
+    game.joueCoup(jeu,coup)
+    if game.finJeu(jeu):
+        g=game.getGagnant(jeu)
+        if g==joueur:
+            return 100000
+        elif g==0:
+            return -100
+        else:
+            return -100000
+    elif prf>=PRONF:
+        return evaluation(jeu,coup,joueur)
+            
+    else:
+        L=game.getCoupsValides(jeu)
+        
+        if(joueur==game.getJoueur(jeu)):
+            val = -5000000
+            for i in L:
+                jeu2=game.getCopieJeu(jeu)
+                val = max(val, estimation(jeu2,i,prf+1,joueur,alpha,beta))
+                if val >= beta:
+                    return val+1
+                alpha = max(val, alpha)
+            return val
+        else:
+            val = 5000000
+            for i in L:
+                jeu2=game.getCopieJeu(jeu)
+                val = min(val, estimation(jeu2,i,prf+1,joueur,alpha,beta))
+                if val <= alpha:
+                    return val-1
+                beta = min(val, beta)
+            return val
+            
+            
+
+def saisieCoup(jeu):    
+    coup=decision(jeu)
+    return coup
+
+
+
